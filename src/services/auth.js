@@ -10,11 +10,17 @@ class AuthService {
             .setEndpoint(conf.appwriteUrl)
             .setProject(conf.appwriteProjectId);
         this.account = new Account(this.client)
-    }
 
+    }
     async createAccount({ name, email, password }) {
         try {
-            const userAccount = await this.account.create(ID.unique(), name, email, password)
+            const userAccount = await this.account.create(
+                ID.unique(),
+                email,
+                password,
+                name
+            );
+
             if (userAccount) {
                 return this.login({ email, password })
             } else {
@@ -27,25 +33,27 @@ class AuthService {
     }
     async login({ email, password }) {
         try {
-            return await this.account.createEmailPasswordSession(email, password)
+            const session = await this.account.createEmailPasswordSession(email, password)
+            const user = await this.account.get()
+            console.log("Appwrite Service :: login :: success", { session, user })
+            return user
         } catch (error) {
             throw error
         }
-        return null;
     }
+
     async getCurrentUser() {
         try {
             return await this.account.get()
         } catch (error) {
-            throw new Error("Appwrite Service :: getCurrentUser :: error", error);
+            console.error("Appwrite Service :: getCurrentUser :: error", error);
         }
-        return null;
     }
     async logout() {
         try {
             return await this.account.deleteSession('current')
         } catch (error) {
-            throw
+            throw error
         }
         return null;
     }

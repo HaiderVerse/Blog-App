@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { data } from "react-router-dom";
 
 const initialState = {
     status: false,
@@ -7,14 +8,20 @@ const initialState = {
 
 const authSlice = createSlice({
     name: "auth",
-    initialState,
+    initialState: {
+        status: false,
+        userData: null  // Changed from userDate to userData
+    },
     reducers: {
         login: (state, action) => {
+            console.log("User logged in:", action.payload.userData);
+
             state.status = true;
-            state.status.userDate = action.payload.userDate
+            state.userData = action.payload.userData;
         },
         logout: (state) => {
             state.status = false
+            state.userData = null;
         }
     }
 })
