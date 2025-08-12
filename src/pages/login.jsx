@@ -8,7 +8,7 @@ import { login } from "@/features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 
 const initialState = {
-    email: 'hasnain@gmail.com',
+    email: 'hasnain.h1215@gmail.com',
     password: 'HHfutball@7',
     error: {
         email: null,
@@ -49,9 +49,13 @@ export default function Login() {
                     email: state.email,
                     password: state.password
                 });
-                if (user) {
-                    sliceDispatch(login({ userData: user }));
+                if (response.type === "user") {
+                    // Normal user
+                    sliceDispatch(login({ userData: response.userData }));
                     navigate('/');
+                } else if (response.type === "admin") {
+                    // Admin magic link
+                    alert(response.message);
                 }
             } catch (error) {
                 console.error('Login failed:', error);
@@ -62,17 +66,6 @@ export default function Login() {
                     }
 
                 })
-                // const messages = {
-                //     401: "Incorrect email or password.",
-                //     429: "Too many attempts. Please try again later.",
-                // };
-
-                // dispatch({
-                //     type: 'SET_ERROR',
-                //     payload: {
-                //         response: messages[error.code] || error.message || "Something went wrong. Please try again."
-                //     }
-                // });
             }
         }
     }

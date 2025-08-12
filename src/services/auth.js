@@ -56,12 +56,19 @@ class AuthService {
                 // Send magic link email
                 await this.account.createMagicURLToken(ID.unique(), email, 'http://localhost:5173/verify-email');
                 console.log("Magic link sent to admin email.");
-                return { message: "Verification link sent to your email." };
+                return {
+                    type: "admin",
+                    message: "Verification link sent to your email.",
+                };
             }
 
             // Normal user flow
             console.log("Appwrite Service :: login :: success", { session, user });
-            return user;
+            return {
+                type: "user",
+                userData: user,
+                session
+            };
 
         } catch (error) {
             throw error;

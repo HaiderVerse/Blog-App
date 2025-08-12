@@ -5,6 +5,7 @@ import Signup from "@/pages/signup";
 import Articles from "@/pages/articles";
 import AddArticle from "@/pages/addArticles";
 import NotFound from "@/pages/notfound";
+import VerifyEmail from "@/pages/verifyEmail";
 
 export {
     Home,
@@ -13,5 +14,6 @@ export {
     About,
     Articles,
     AddArticle,
-    NotFound
+    NotFound,
+    VerifyEmail
 }

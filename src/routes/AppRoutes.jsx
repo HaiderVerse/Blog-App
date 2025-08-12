@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "@/App.jsx";
-import { Home, About, Articles, AddArticle, Login, Signup, NotFound } from "@/pages";
+import { Home, Articles, AddArticle, Login, Signup, NotFound, VerifyEmail } from "@/pages";
 import AuthLayout from "@/layouts/auth";
 import NotFoundLayout from "../layouts/NotFoundLayout";
 const router = createBrowserRouter([
@@ -14,7 +14,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "/verify-email",
-                element: <Home />,
+                element: <VerifyEmail />,
             },
             {
                 path: "/login",
