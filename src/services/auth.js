@@ -13,6 +13,12 @@ class AuthService {
 
     }
     async createAccount({ name, email, password }) {
+        // return new Promise((resolve) => {
+        //     setTimeout(() => {
+        //         console.log({ name, email, password });
+        //         resolve({ name, email, password }); // Return via resolve
+        //     }, 3000);
+        // });
         try {
             const userAccount = await this.account.create(
                 ID.unique(),
@@ -20,28 +26,57 @@ class AuthService {
                 password,
                 name
             );
+            if (userAccount) return this.login({ email, password });
 
-            if (userAccount) {
-                return this.login({ email, password })
-            } else {
-                return userAccount
-            }
         } catch (error) {
             throw error;
         }
-        return null;
     }
+    // async login({ email, password }) {
+    //     try {
+    //         const session = await this.account.createEmailPasswordSession(email, password)
+    //         const user = await this.account.get()
+    //         console.log("Appwrite Service :: login :: success", { session, user })
+    //         return user
+    //     } catch (error) {
+    //         throw error
+    //     }
+    // }
     async login({ email, password }) {
         try {
-            const session = await this.account.createEmailPasswordSession(email, password)
-            const user = await this.account.get()
-            console.log("Appwrite Service :: login :: success", { session, user })
-            return user
+            // First, get the user
+            const session = await this.account.createEmailPasswordSession(email, password);
+            const user = await this.account.get();
+
+            // Check if admin
+            if (user.labels && user.labels.includes("admin")) {
+                // Delete the normal session because we will use magic link
+                await this.account.deleteSession("current");
+
+                // Send magic link email
+                await this.account.createMagicURLToken(ID.unique(), email, 'http://localhost:5173/verify-email');
+                console.log("Magic link sent to admin email.");
+                return { message: "Verification link sent to your email." };
+            }
+
+            // Normal user flow
+            console.log("Appwrite Service :: login :: success", { session, user });
+            return user;
+
         } catch (error) {
-            throw error
+            throw error;
         }
     }
-
+    async completeMagicLogin({ secret, userId }) {
+        try {
+            const session = await this.account.createSession(userId, secret);
+            const user = await this.account.get();
+            return { session, user };
+        } catch (error) {
+            console.error("Appwrite Service :: completeMagicLogin :: error", error);
+            throw error;
+        }
+    }
     async getCurrentUser() {
         try {
             return await this.account.get()

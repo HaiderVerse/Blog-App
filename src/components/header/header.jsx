@@ -18,12 +18,12 @@ export default function Header() {
         {
             name: "Articles",
             slug: "/articles",
-            active: !status,
+            active: status,
         },
         {
             name: "Add Article",
             slug: "/add-article",
-            active: !status,
+            active: status,
         },
     ]
 

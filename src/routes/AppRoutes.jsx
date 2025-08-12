@@ -13,6 +13,10 @@ const router = createBrowserRouter([
                 element: <Home />,
             },
             {
+                path: "/verify-email",
+                element: <Home />,
+            },
+            {
                 path: "/login",
                 element: (
                     <AuthLayout authentication={false}>

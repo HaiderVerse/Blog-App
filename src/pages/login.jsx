@@ -55,18 +55,24 @@ export default function Login() {
                 }
             } catch (error) {
                 console.error('Login failed:', error);
-
-                const messages = {
-                    401: "Incorrect email or password.",
-                    429: "Too many attempts. Please try again later.",
-                };
-
                 dispatch({
                     type: 'SET_ERROR',
                     payload: {
-                        response: messages[error.code] || error.message || "Something went wrong. Please try again."
+                        response: error.message || "Something went wrong. Please try again."
                     }
-                });
+
+                })
+                // const messages = {
+                //     401: "Incorrect email or password.",
+                //     429: "Too many attempts. Please try again later.",
+                // };
+
+                // dispatch({
+                //     type: 'SET_ERROR',
+                //     payload: {
+                //         response: messages[error.code] || error.message || "Something went wrong. Please try again."
+                //     }
+                // });
             }
         }
     }
