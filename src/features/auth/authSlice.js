@@ -3,7 +3,8 @@ import { data } from "react-router-dom";
 
 const initialState = {
     status: false,
-    userDate: null
+    userDate: null,
+    loading: true
 }
 
 const authSlice = createSlice({
@@ -14,18 +15,19 @@ const authSlice = createSlice({
     },
     reducers: {
         login: (state, action) => {
-            console.log("User logged in:", action.payload.userData);
-
             state.status = true;
             state.userData = action.payload.userData;
         },
         logout: (state) => {
             state.status = false
             state.userData = null;
+        },
+        setLoading: (state, action) => {
+            state.loading = action.payload; // true/false pass kar sakte ho
         }
     }
 })
 
-export const { login, logout } = authSlice.actions
+export const { login, logout, setLoading } = authSlice.actions
 
 export default authSlice.reducer

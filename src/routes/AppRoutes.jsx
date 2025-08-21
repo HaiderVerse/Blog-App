@@ -1,56 +1,122 @@
 import { createBrowserRouter } from "react-router-dom";
 import App from "@/App.jsx";
-import { Home, Articles, AddArticle, Login, Signup, NotFound, VerifyEmail } from "@/pages";
-import AuthLayout from "@/layouts/auth";
-import NotFoundLayout from "../layouts/NotFoundLayout";
+import { Home, Articles, NewArticle, Login, Signup, NotFound, VerifyEmail, Article } from "@/pages";
+import AuthContainer from "@/components/authContainer";
+import { NotFoundLayout, User } from "@/layouts";
+
 const router = createBrowserRouter([
     {
         path: "/",
         element: <App />,
         children: [
             {
-                path: "/",
+                index: true, // Home
                 element: <Home />,
             },
             {
-                path: "/verify-email",
+                path: "verify-email",
                 element: <VerifyEmail />,
             },
             {
-                path: "/login",
+                path: "login",
                 element: (
-                    <AuthLayout authentication={false}>
+                    <AuthContainer authentication={false}>
                         <Login />
-                    </AuthLayout>
+                    </AuthContainer>
                 ),
             },
             {
-                path: "/signup",
+                path: "signup",
                 element: (
-                    <AuthLayout authentication={false}>
+                    <AuthContainer authentication={false}>
                         <Signup />
-                    </AuthLayout>
+                    </AuthContainer>
                 ),
             },
             {
-                path: "/articles",
+                path: "articles",
                 element: (
-                    <AuthLayout authentication={true}>
+                    <AuthContainer authentication={true}>
                         <Articles />
-                    </AuthLayout>
+                    </AuthContainer>
                 ),
             },
             {
-                path: "/add-article",
+                path: "article/new",
                 element: (
-                    <AuthLayout authentication={false}>
-                        <AddArticle />
-                    </AuthLayout>
+                    <AuthContainer authentication={true}>
+                        <NewArticle />
+                    </AuthContainer>
                 ),
-            }
+            },
+            {
+                path: "article/:slug",
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Article />
+                    </AuthContainer>
+                ),
+            },
+            {
+                path: "article/:slug/edit",
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Article />
+                    </AuthContainer>
+                ),
+            },
         ],
     },
-    // Not Found route outside main layout
+
+    // User profile routes (NO header/footer)
+    {
+        path: ":id",
+        element: <User />, // Custom layout without header/footer
+        children: [
+            {
+                index: true,
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Articles />
+                    </AuthContainer>
+                ),
+            },
+            {
+                path: 'articles',
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Articles />
+                    </AuthContainer>
+                ),
+            },
+            {
+                path: 'wishlist',
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Articles />
+                    </AuthContainer>
+                ),
+            },
+            {
+                path: 'collections',
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Articles />
+                    </AuthContainer>
+                ),
+            },
+            {
+                path: 'about',
+                element: (
+                    <AuthContainer authentication={true}>
+                        <Articles />
+                    </AuthContainer>
+                ),
+            },
+        ],
+    },
+
+    // Not found
     {
         path: "*",
         element: (
@@ -60,4 +126,5 @@ const router = createBrowserRouter([
         ),
     },
 ]);
+
 export default router;

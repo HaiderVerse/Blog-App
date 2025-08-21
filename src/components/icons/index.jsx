@@ -4,6 +4,7 @@ import LinkedIn from "./linkedIn";
 import Twitter from "./twitter";
 import EyeOpen from "./eyeOpen";
 import EyeClose from "./eyeClose";
+import BoxImage from "./box-image";
 
 
 const Icons = ({ type, width = "24px", height = "24px" }) => {
@@ -20,6 +21,8 @@ const Icons = ({ type, width = "24px", height = "24px" }) => {
       return <EyeOpen width={width} height={height} />;
     case "eyeClose":
       return <EyeClose width={width} height={height} />;
+    case "boxImage":
+      return <BoxImage width={width} height={height} />;
     default:
       return null;
   }

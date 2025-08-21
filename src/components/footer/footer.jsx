@@ -1,7 +1,7 @@
 import React from 'react'
 import Container from '@/components/global/container.jsx'
-import GlobalButton from '../global/Button'
-import Icons from '../icons/index.jsx'
+import GlobalButton from '@/components/global/Button'
+import Icons from '@/components/icons/index.jsx'
 export default function Footer() {
     return (
         <>
@@ -41,7 +41,7 @@ export default function Footer() {
                         </div>
                     </div>
                     <div className='my-12'>
-                        <img src="images/footer-line.png" alt="footer-line" />
+                        <img src="/images/footer-line.png" alt="footer-line" />
                     </div>
                     <div className="text-white font-normal text-lg text-center">ⓒ 2024
                         <span className="text-[#F03DA7]">LLC</span>

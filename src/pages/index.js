@@ -3,7 +3,8 @@ import About from "@/pages/about";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import Articles from "@/pages/articles";
-import AddArticle from "@/pages/addArticles";
+import Article from "@/pages/article";
+import NewArticle from "@/pages/newArticle";
 import NotFound from "@/pages/notfound";
 import VerifyEmail from "@/pages/verifyEmail";
 
@@ -13,7 +14,8 @@ export {
     Signup,
     About,
     Articles,
-    AddArticle,
+    Article,
+    NewArticle,
     NotFound,
     VerifyEmail
 }

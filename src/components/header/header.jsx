@@ -4,6 +4,8 @@ import Container from '@/components/global/container';
 import GlobalButton from '@/components/global/Button';
 import { logout } from '@/features/auth/authSlice.js';
 import authService from '@/services/auth.js';
+import UserMenu from './UserMenu';
+
 
 export default function Header() {
     const { status, userData } = useSelector((state) => state.auth);
@@ -21,20 +23,19 @@ export default function Header() {
             active: status,
         },
         {
-            name: "Add Article",
-            slug: "/add-article",
+            name: "New Article",
+            slug: "/article/new",
             active: status,
         },
     ]
 
-    const handleLogout = () => {
-        authService.logout()
-            .then(() => {
-                dispatch(logout());
-            })
-            .catch((error) => {
-                console.error("Logout failed:", error);
-            });
+    async function handleLogout() {
+        try {
+            const respose = await authService.logout();
+            if (respose) dispatch(logout());
+        } catch (error) {
+            console.error("Error during logout:", error);
+        }
     }
 
     return (
@@ -60,7 +61,8 @@ export default function Header() {
                         </ul>
                     </nav>
                     {status ? (
-                        <GlobalButton type='button' onClick={handleLogout}>Logout</GlobalButton>
+
+                        <UserMenu logout={handleLogout} />
                     ) : (
                         <div className='flex items-center gap-x-4 text-white'>
                             <GlobalButton link="/login">Login</GlobalButton>
