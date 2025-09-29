@@ -45,6 +45,7 @@ import {
 import Icons from '@/components/icons';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { useDispatch } from 'react-redux';
 
 
 
@@ -83,6 +84,13 @@ const initialState = {
         metaTitle: '',
         metaDescription: '',
         metaKeywords: '',
+        seoScore: 0,
+        writingStats: {
+            wordCount: 0,
+            readTime: 0,
+            headings: 0,
+            images: 0
+        }
     },
     tagInput: '',
 
@@ -103,56 +111,43 @@ export default function newArticle() {
 
     const fileInputRef = useRef(null);
     const tagRef = useRef(null);
+    const BLOGDATA = state.blogData;
 
+    // Tags functionality
     const handleTagInput = (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
             const newTag = state.tagInput.trim();
-            if (newTag && !state.blogData.tags.includes(newTag)) {
+            if (newTag && !BLOGDATA.tags.includes(newTag)) {
                 dispatch({
                     type: 'SET_BLOG_DATA',
                     payload: {
-                        ...state.blogData,
-                        tags: [...state.blogData.tags, newTag]
+                        ...BLOGDATA,
+                        tags: [...BLOGDATA.tags, newTag]
                     }
                 });
                 dispatch({ type: 'SET_TAG_INPUT', payload: '' });
             }
-            if (state.blogData.tags.length >= 4) {
-                tagRef.current.disabled = true
-            }
         }
     };
-
     const removeTag = (tagToRemove) => {
-        if (state.blogData.tags.length <= 4) {
-            tagRef.current.disabled = false
-        }
         dispatch({
             type: 'SET_BLOG_DATA',
             payload: {
-                ...state.blogData,
-                tags: state.blogData.tags.filter(tag => tag !== tagToRemove)
+                ...BLOGDATA,
+                tags: BLOGDATA.tags.filter(tag => tag !== tagToRemove)
             }
         });
     };
-    // Generate slug from title
     useEffect(() => {
-        if (state.blogData.title) {
-            const slug = state.blogData.title
-                .toLowerCase()
-                .replace(/[^\w\s]/g, '')
-                .replace(/\s+/g, '-');
-            dispatch({
-                type: 'SET_BLOG_DATA',
-                payload: {
-                    ...state.blogData,
-                    slug
-                }
-            })
+        if (BLOGDATA.tags.length > 4) {
+            tagRef.current.disabled = true
+        } else {
+            tagRef.current.disabled = false
         }
-    }, [state.blogData.title]);
+    }, [BLOGDATA.tags]);
 
+    // handle image upload functionality
     const handleImageUpload = (e) => {
         e.preventDefault()
         const file = e.target.files[0]
@@ -164,7 +159,6 @@ export default function newArticle() {
         processFile(file)
     }
     const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
-
     const processFile = (file) => {
         if (!file) return;
         console.log(file);
@@ -187,7 +181,7 @@ export default function newArticle() {
             dispatch({
                 type: "SET_BLOG_DATA",
                 payload: {
-                    ...state.blogData,
+                    ...BLOGDATA,
                     featuredImage: {
                         file,
                         preview: e.target.result
@@ -198,12 +192,129 @@ export default function newArticle() {
         reader.readAsDataURL(file);
     };
 
+    // Calculate writing stats
+    useEffect(() => {
+        console.log("calculate writing stats");
+
+        if (!BLOGDATA.content) return;
+
+        const textContent = BLOGDATA.content.replace(/<[^>]*>/g, ' ');
+        const words = textContent.trim().split(/\s+/).filter(word => word.length > 0);
+        const wordCount = words.length;
+        const readTime = Math.ceil(wordCount / 200);
+        const headingMatches = BLOGDATA.content.match(/<h[1-6][^>]*>/gi);
+        const headings = headingMatches ? headingMatches.length : 0;
+        const imageMatches = BLOGDATA.content.match(/<img[^>]*>/gi);
+        const images = imageMatches ? imageMatches.length : 0;
+
+        dispatch({
+            type: 'SET_BLOG_DATA',
+            payload: {
+                ...BLOGDATA,
+                writingStats: {
+                    wordCount,
+                    readTime,
+                    headings,
+                    images
+                }
+            }
+        });
+    }, [BLOGDATA.content]);
+
+
+    // helper: safe slug
+    const makeSlug = (title = "") => {
+        return (
+            title
+                .toLowerCase()
+                .trim()
+                // keep letters/numbers/spaces/hyphen; remove the rest (unicode friendly)
+                .replace(/[^\p{L}\p{N}\s-]/gu, "")
+                .replace(/\s+/g, "-")
+                .replace(/-+/g, "-")
+        )
+    }
+
+    useEffect(() => {
+        // --- calculate slug
+        const nextSlug = BLOGDATA.title ? makeSlug(BLOGDATA.title) : "";
+
+        // --- calculate seoScore (tumhara existing logic ya jo maine diya tha)
+        let score = 0;
+
+        // Title (20)
+        if (BLOGDATA.title && BLOGDATA.title.length >= 40 && BLOGDATA.title.length <= 60) score += 20;
+        else if (BLOGDATA.title && BLOGDATA.title.length >= 10 && BLOGDATA.title.length <= 20) score += 10;
+
+        // Slug (10)
+        if (nextSlug.length > 10) score += 10;
+
+        // Featured image (5)
+        if (BLOGDATA.featuredImage) score += 5;
+
+        // Content (25)
+        if (BLOGDATA.content) {
+            const text = BLOGDATA.content.replace(/<[^>]*>/g, " ");
+            const words = text.trim().split(/\s+/).filter(Boolean);
+            const wc = words.length;
+            if (wc >= 800) score += 25;
+            else if (wc >= 400) score += 15;
+            else if (wc >= 200) score += 10;
+        }
+
+        // Category (5)
+        if (BLOGDATA.category) score += 5;
+
+        // Tags (5)
+        if (BLOGDATA.tags?.length) score += 5;
+
+        // Meta title (15)
+        if (BLOGDATA.metaTitle && BLOGDATA.metaTitle.length >= 40 && BLOGDATA.metaTitle.length <= 60) score += 15;
+        else if (BLOGDATA.metaTitle) score += 8;
+
+        // Meta description (10)
+        if (BLOGDATA.metaDescription && BLOGDATA.metaDescription.length >= 150 && BLOGDATA.metaDescription.length <= 160) score += 10;
+        else if (BLOGDATA.metaDescription && BLOGDATA.metaDescription.length > 80) score += 5;
+
+        // Keywords (5)
+        if (BLOGDATA.metaKeywords?.length) score += 5;
+
+        // --- dispatch only if something actually changed
+        const slugChanged = nextSlug !== BLOGDATA.slug;
+        const scoreChanged = score !== BLOGDATA.seoScore;
+
+        if (slugChanged || scoreChanged) {
+            dispatch({
+                type: "SET_BLOG_DATA",
+                payload: {
+                    ...BLOGDATA,
+                    slug: nextSlug,
+                    seoScore: score,
+                },
+            });
+        }
+    }, [
+        BLOGDATA.title,
+        BLOGDATA.featuredImage,
+        BLOGDATA.content,
+        BLOGDATA.category,
+        BLOGDATA.tags,
+        BLOGDATA.metaTitle,
+        BLOGDATA.metaDescription,
+        BLOGDATA.metaKeywords,
+        BLOGDATA.slug,
+        BLOGDATA.seoScore,
+    ]);
+
+
+
     return (
         <>
             <main className="container mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Blog Main Details */}
                         <Card>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
@@ -211,18 +322,18 @@ export default function newArticle() {
                                     <Input
                                         id="title"
                                         placeholder="Enter your blog title"
-                                        value={state.blogData.title}
+                                        value={BLOGDATA.title}
                                         onChange={(e) => dispatch({
                                             type: 'SET_BLOG_DATA',
                                             payload: {
-                                                ...state.blogData,
+                                                ...BLOGDATA,
                                                 title: e.target.value
                                             }
                                         })}
                                         onBlur={(e) => dispatch({
                                             type: 'SET_BLOG_DATA',
                                             payload: {
-                                                ...state.blogData,
+                                                ...BLOGDATA,
                                                 title: e.target.value.trim()
                                             }
                                         })}
@@ -234,11 +345,11 @@ export default function newArticle() {
                                     <Input
                                         id="slug"
                                         placeholder="your-blog-url"
-                                        value={state.blogData.slug}
+                                        value={BLOGDATA.slug}
                                         onChange={(e) => dispatch({
                                             type: 'SET_BLOG_DATA',
                                             payload: {
-                                                ...state.blogData,
+                                                ...BLOGDATA,
                                                 slug: e.target.value
                                             }
                                         })}
@@ -247,6 +358,7 @@ export default function newArticle() {
                             </CardContent>
                         </Card>
 
+                        {/* Blog Tags and Category */}
                         <Card>
                             <CardContent className="p-6 space-y-4">
                                 <div className="space-y-2">
@@ -259,7 +371,7 @@ export default function newArticle() {
                                                 aria-expanded={open}
                                                 className="w-[300px] justify-between"
                                             >
-                                                {state.blogData.category ? category.find((category) => category.value === state.blogData.category)?.label : "Select Category..."}
+                                                {BLOGDATA.category ? category.find((category) => category.value === BLOGDATA.category)?.label : "Select Category..."}
                                                 <ChevronsUpDown className="opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
@@ -277,8 +389,8 @@ export default function newArticle() {
                                                                     dispatch({
                                                                         type: 'SET_BLOG_DATA',
                                                                         payload: {
-                                                                            ...state.blogData,
-                                                                            category: currentValue === state.blogData.category ? "" : currentValue
+                                                                            ...BLOGDATA,
+                                                                            category: currentValue === BLOGDATA.category ? "" : currentValue
                                                                         }
                                                                     });
                                                                     setOpen(false);
@@ -288,7 +400,7 @@ export default function newArticle() {
                                                                 <Check
                                                                     className={cn(
                                                                         "ml-auto",
-                                                                        state.blogData.category === category.value ? "opacity-100" : "opacity-0"
+                                                                        BLOGDATA.category === category.value ? "opacity-100" : "opacity-0"
                                                                     )}
                                                                 />
                                                             </CommandItem>
@@ -305,12 +417,15 @@ export default function newArticle() {
                                         id="tags"
                                         placeholder="Add tags (press Enter or comma)"
                                         value={state.tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onChange={(e) => dispatch({
+                                            type: 'SET_TAG_INPUT',
+                                            payload: e.target.value
+                                        })}
                                         onKeyDown={handleTagInput}
                                         ref={tagRef}
                                     />
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {state.blogData.tags.map((tag) => (
+                                        {BLOGDATA.tags.map((tag) => (
                                             <Badge
                                                 key={tag}
                                                 variant="secondary"
@@ -330,16 +445,17 @@ export default function newArticle() {
                             </CardContent>
                         </Card>
 
+                        {/* blog featured image */}
                         <Card>
                             <CardContent className="p-6 space-y-4">
                                 <Label>Featured Image</Label>
                                 <div
-                                    className={`border-[#DDDDF8] border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors hover:bg-[#f8f9fc] ${state.blogData.featuredImage ? 'bg-gray-50' : 'bg-white'}`}
+                                    className={`border-[#DDDDF8] border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors hover:bg-[#f8f9fc] ${BLOGDATA.featuredImage ? 'bg-gray-50' : 'bg-white'}`}
                                     onClick={() => fileInputRef.current.click()}
                                     onDrop={handleDrop}
                                     onDragOver={(e) => e.preventDefault()}
                                 >
-                                    {state.blogData.featuredImage ? (
+                                    {BLOGDATA.featuredImage ? (
                                         <div className="relative">
                                             <div className="absolute top-2 right-2">
                                                 <Button
@@ -351,7 +467,7 @@ export default function newArticle() {
                                                         dispatch({
                                                             type: 'SET_BLOG_DATA',
                                                             payload: {
-                                                                ...state.blogData,
+                                                                ...BLOGDATA,
                                                                 featuredImage: null
                                                             }
                                                         })
@@ -361,7 +477,7 @@ export default function newArticle() {
                                                 </Button>
                                             </div>
                                             <img
-                                                src={state.blogData.featuredImage.preview}
+                                                src={BLOGDATA.featuredImage.preview}
                                                 alt="Preview"
                                                 className="max-h-60 rounded-lg object-cover mx-auto"
                                             />
@@ -394,6 +510,7 @@ export default function newArticle() {
                             </CardContent>
                         </Card>
 
+                        {/* Blog Text Editor */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Blog Content</CardTitle>
@@ -409,12 +526,12 @@ export default function newArticle() {
                                         font_size_formats: '10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
                                         content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14pt, }'
                                     }}
-                                    value={state.blogData.content}
+                                    value={BLOGDATA.content}
                                     onEditorChange={(content) => {
                                         dispatch({
                                             type: 'SET_BLOG_DATA',
                                             payload: {
-                                                ...state.blogData,
+                                                ...BLOGDATA,
                                                 content
                                             }
                                         });
@@ -423,6 +540,7 @@ export default function newArticle() {
                             </CardContent>
                         </Card>
 
+                        {/* Blog SEO */}
                         <Card>
                             <Collapsible open={isSeoOpen} onOpenChange={setIsSeoOpen}>
                                 <CardHeader className="py-4 cursor-pointer grid-rows-[auto]">
@@ -441,12 +559,12 @@ export default function newArticle() {
                                             <Input
                                                 id="metaTitle"
                                                 placeholder="SEO title for search engines"
-                                                value={state.blogData.metaTitle}
+                                                value={BLOGDATA.metaTitle}
                                                 onChange={(e) => {
                                                     dispatch({
                                                         type: 'SET_BLOG_DATA',
                                                         payload: {
-                                                            ...state.blogData,
+                                                            ...BLOGDATA,
                                                             metaTitle: e.target.value
                                                         }
                                                     });
@@ -458,12 +576,12 @@ export default function newArticle() {
                                             <Textarea
                                                 id="metaDescription"
                                                 placeholder="Brief description for search results"
-                                                value={state.blogData.metaDescription}
+                                                value={BLOGDATA.metaDescription}
                                                 onChange={(e) => {
                                                     dispatch({
                                                         type: 'SET_BLOG_DATA',
                                                         payload: {
-                                                            ...state.blogData,
+                                                            ...BLOGDATA,
                                                             metaDescription: e.target.value
                                                         }
                                                     });
@@ -475,12 +593,12 @@ export default function newArticle() {
                                             <Input
                                                 id="metaKeywords"
                                                 placeholder="Comma separated keywords"
-                                                value={state.blogData.metaKeywords}
+                                                value={BLOGDATA.metaKeywords}
                                                 onChange={(e) => {
                                                     dispatch({
                                                         type: 'SET_BLOG_DATA',
                                                         payload: {
-                                                            ...state.blogData,
+                                                            ...BLOGDATA,
                                                             metaKeywords: e.target.value
                                                         }
                                                     });
@@ -494,12 +612,13 @@ export default function newArticle() {
                     </div>
                     {/* Sidebar */}
                     <div className="space-y-6 sticky top-5 self-start">
+                        {/* publish options */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Publish Options</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <Button
                                         variant="outline"
                                         className="flex gap-2 cursor-pointer"
@@ -526,6 +645,28 @@ export default function newArticle() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Quick Actions */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <BarChart className="w-5 h-5" />
+                                    Quick Actions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-x-5 items-center">
+                                <Button variant="outline" className="w-auto">
+                                    <FileText className="w-4 h-4 mr-3" />
+                                    My Drafts (4)
+                                </Button>
+                                <Button variant="outline" className="w-auto">
+                                    <Archive className="w-4 h-4 mr-3" />
+                                    Recent Blogs
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* SEO Score */}
                         <Card>
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
@@ -538,12 +679,12 @@ export default function newArticle() {
                                     <div className='w-[200px]'>
 
                                         <CircularProgressbar
-                                            value={75}
-                                            text={`75`}
+                                            value={BLOGDATA.seoScore}
+                                            text={`${BLOGDATA.seoScore}`}
                                             styles={{
                                                 path: {
                                                     // stroke: getSeoColor(seoScore),
-                                                    stroke: 'blue',
+                                                    stroke: '#f03da7',
                                                     strokeLinecap: 'round',
                                                 },
                                                 trail: {
@@ -560,6 +701,59 @@ export default function newArticle() {
                                             }}
                                         />
                                     </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Writing Stats */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <File className="w-5 h-5" />
+                                    Writing Stats
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-bold">{BLOGDATA.writingStats.wordCount}</div>
+                                        <div className="text-sm text-muted-foreground">Words</div>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-bold">{BLOGDATA.writingStats.readTime} min</div>
+                                        <div className="text-sm text-muted-foreground">Read Time</div>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-bold">{BLOGDATA.writingStats.headings}</div>
+                                        <div className="text-sm text-muted-foreground">Headings</div>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-4 text-center">
+                                        <div className="text-2xl font-bold">{BLOGDATA.writingStats.images}</div>
+                                        <div className="text-sm text-muted-foreground">Images</div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Featured Image Details */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <ImageIcon className="w-5 h-5" />
+                                    Featured Image Guidelines
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-muted-foreground">
+                                    <p className="mb-3">For best results, follow these guidelines:</p>
+                                    <ul className="space-y-2 list-disc pl-5">
+                                        <li>Use high-quality images (min 1200px width)</li>
+                                        <li>Maintain 16:9 aspect ratio</li>
+                                        <li>File size under 2MB (JPG or PNG)</li>
+                                        <li>Include relevant text overlay when needed</li>
+                                        <li>Avoid copyrighted images</li>
+                                        <li>Ensure proper contrast with text</li>
+                                    </ul>
                                 </div>
                             </CardContent>
                         </Card>

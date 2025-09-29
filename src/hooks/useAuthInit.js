@@ -3,7 +3,7 @@ import authService from '@/services/auth.js';
 import { useEffect } from 'react'
 import { useDispatch } from 'react-redux';
 
-export default function getUserData(user) {
+export default function useAuthInit() {
   const dispatch = useDispatch()
 
   useEffect(() => {

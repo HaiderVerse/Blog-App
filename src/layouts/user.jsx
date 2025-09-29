@@ -1,4 +1,5 @@
-import { Header, Footer, getUserData } from '@/components';
+import { useAuthInit } from '@/hooks'
+import { Header, Footer } from '@/components';
 import { Outlet } from "react-router";
 import { ProfileHeader } from '@/components';
 import { useSelector } from 'react-redux';
@@ -7,7 +8,7 @@ import { NotFound } from '@/pages'
 export default function User() {
     const { userData, loading } = useSelector((state) => state.auth);
     // Fetch user data (consider adding error handling)
-    getUserData('user.jsx');
+    useAuthInit();
 
     const path = window.location.pathname;
     const userEmail = userData?.email?.replace('@gmail.com', '')?.replaceAll('.', '-') || '';

@@ -4,19 +4,25 @@ import { useNavigate } from 'react-router-dom'
 
 export default function AuthContainer({ children, authentication }) {
     const navigate = useNavigate();
-    const authStatus = useSelector((state) => state.auth.status);
+    const { status: authStatus, loading: authLoading } = useSelector(
+        (state) => state.auth
+    );
 
-    // useEffect(() => {
-    //     // If authentication is required but user is not logged in
-    //     if (authentication && !authStatus) {
-    //         navigate("/login");
-    //     }
-    //     // If authentication is NOT required but user is logged in
-    //     else if (!authentication && authStatus) {
-    //         navigate("/");
-    //     }
-    // }, [authentication, authStatus, navigate]);
+    useEffect(() => {
+        // Only run after loading is finished
+        if (!authLoading) {
+            if (authentication && !authStatus) {
+                navigate("/login");
+            } else if (!authentication && authStatus) {
+                navigate("/");
+            }
+        }
+    }, [authStatus, authentication, authLoading, navigate]);
 
-    // Always return children here, not inside useEffect
+    // Show spinner or nothing until loading finishes
+    if (authLoading) {
+        return <div>Loading...</div>;
+    }
+
     return children;
 }

@@ -67,7 +67,8 @@ class AuthService {
             return {
                 type: "user",
                 userData: user,
-                session
+                session,
+                message: "Login successful."
             };
 
         } catch (error) {

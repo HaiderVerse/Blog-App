@@ -49,13 +49,13 @@ export default function Login() {
                     email: state.email,
                     password: state.password
                 });
-                if (response.type === "user") {
+                if (user.type === "user") {
                     // Normal user
-                    sliceDispatch(login({ userData: response.userData }));
+                    sliceDispatch(login({ userData: user.userData }));
                     navigate('/');
-                } else if (response.type === "admin") {
+                } else if (user.type === "admin") {
                     // Admin magic link
-                    alert(response.message);
+                    alert(user.message);
                 }
             } catch (error) {
                 console.error('Login failed:', error);

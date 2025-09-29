@@ -1,13 +1,14 @@
 import authService from '@/services/auth.js'
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Header, Footer, getUserData } from '@/components'
+import { Header, Footer } from '@/components'
+import { useAuthInit } from '@/hooks'
 import { Outlet } from "react-router";
 
 
 export default function App() {
   // Fetch user data (consider adding error handling)
-  getUserData('user.jsx');
+  useAuthInit();
 
   const { userData, loading } = useSelector((state) => state.auth)
   return loading ? (

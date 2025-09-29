@@ -1,33 +1,30 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { data } from "react-router-dom";
 
 const initialState = {
     status: false,
-    userDate: null,
-    loading: true
-}
+    userData: null, // spelling fix
+    loading: true   // 👈 include loading
+};
 
 const authSlice = createSlice({
     name: "auth",
-    initialState: {
-        status: false,
-        userData: null  // Changed from userDate to userData
-    },
+    initialState,   // 👈 use this
     reducers: {
         login: (state, action) => {
             state.status = true;
             state.userData = action.payload.userData;
+            state.loading = false; // auth done
         },
         logout: (state) => {
-            state.status = false
+            state.status = false;
             state.userData = null;
+            state.loading = false;
         },
         setLoading: (state, action) => {
-            state.loading = action.payload; // true/false pass kar sakte ho
+            state.loading = action.payload; // true/false
         }
     }
-})
+});
 
-export const { login, logout, setLoading } = authSlice.actions
-
-export default authSlice.reducer
+export const { login, logout, setLoading } = authSlice.actions;
+export default authSlice.reducer;
